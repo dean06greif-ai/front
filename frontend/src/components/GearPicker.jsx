@@ -1,24 +1,26 @@
 import React, { useEffect, useRef, useCallback, useState } from "react";
 
+// Konstanten außerhalb der Komponente -> stabile Referenzen
+const VALUES = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+const ITEM_H = 18;   // kompakte Zahnhöhe
+const VISIBLE = 3;   // 3 sichtbare Items
+const HEIGHT = ITEM_H * VISIBLE;
+
+const clamp = (n) => Math.max(1, Math.min(10, n));
+
 /**
  * GearPicker (kompakt, dezent).
  * - Werte 1..10, 10 oben, 1 unten
  * - Mini-Format: passt rechts neben einen Input
  * - Hover: die Zähne animieren sich von alleine (subtle spin)
- * - Bedienbar: Scroll, Drag, Mausrad, Click, Tastatur ↑/↓
+ * - Bedienbar: Scroll, Drag, Mausrad, Click, Tastatur Pfeil hoch/runter
  * - navigator.vibrate beim Snap (Mobile)
  */
 export default function GearPicker({ value = 10, onChange, color = "#CCFF00", testid = "gear" }) {
-  const VALUES = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-  const ITEM_H = 18;                 // kompakte Zahnhöhe
-  const VISIBLE = 3;                 // 3 sichtbare Items
-  const HEIGHT = ITEM_H * VISIBLE;
   const scrollerRef = useRef(null);
   const lastEmittedRef = useRef(value);
   const dragRef = useRef({ active: false, startY: 0, startScroll: 0 });
   const [hover, setHover] = useState(false);
-
-  const clamp = (n) => Math.max(1, Math.min(10, n));
 
   const scrollToValue = useCallback((scrollTop) => {
     const idx = Math.round(scrollTop / ITEM_H);
@@ -60,6 +62,7 @@ export default function GearPicker({ value = 10, onChange, color = "#CCFF00", te
     dragRef.current = { active: true, startY: e.clientY, startScroll: el.scrollTop };
     document.body.style.cursor = "ns-resize";
   };
+
   useEffect(() => {
     const onMove = (e) => {
       if (!dragRef.current.active) return;
@@ -93,61 +96,59 @@ export default function GearPicker({ value = 10, onChange, color = "#CCFF00", te
 
   return (
     <div
-      className="relative select-none"
-      style={{ width: 38, height: HEIGHT }}
-      data-testid={`${testid}-wrapper`}
+      data-testid={testid}
+      tabIndex={0}
+      onKeyDown={onKeyDown}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      style={{
+        position: "relative",
+        width: 44,
+        height: HEIGHT,
+        userSelect: "none",
+        outline: "none",
+      }}
     >
-      {/* Inline keyframes für Hover-Spin der seitlichen Zähne */}
       <style>{`
-        @keyframes gp-spin-${testid} {
-          0%   { background-position: 0 0; }
-          100% { background-position: 0 ${ITEM_H}px; }
+        @keyframes gp-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
         }
-        .gp-hide-${testid}::-webkit-scrollbar { display: none; }
       `}</style>
-
-      {/* Linke Zähne */}
-      <div
-        aria-hidden
-        className="absolute top-0 bottom-0 left-0 pointer-events-none"
-        style={{
-          width: 3,
-          backgroundImage: `repeating-linear-gradient(to bottom, ${color}66 0 2px, transparent 2px 6px)`,
-          animation: hover ? `gp-spin-${testid} 700ms linear infinite` : "none",
-          opacity: hover ? 0.9 : 0.4,
-          transition: "opacity 200ms",
-        }}
-      />
-      {/* Rechte Zähne */}
-      <div
-        aria-hidden
-        className="absolute top-0 bottom-0 right-0 pointer-events-none"
-        style={{
-          width: 3,
-          backgroundImage: `repeating-linear-gradient(to bottom, ${color}66 0 2px, transparent 2px 6px)`,
-          animation: hover ? `gp-spin-${testid} 700ms linear infinite reverse` : "none",
-          opacity: hover ? 0.9 : 0.4,
-          transition: "opacity 200ms",
-        }}
-      />
 
       {/* Center-Marker > < */}
       <div
-        aria-hidden
-        className="absolute left-0 right-0 z-20 pointer-events-none flex items-center justify-between"
-        style={{ top: ITEM_H, height: ITEM_H, paddingLeft: 3, paddingRight: 3 }}
+        style={{
+          position: "absolute",
+          top: ITEM_H,
+          left: 0,
+          width: "100%",
+          height: ITEM_H,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          pointerEvents: "none",
+          color,
+          fontSize: 10,
+          opacity: 0.7,
+          padding: "0 2px",
+        }}
       >
-        <span style={{ color, fontSize: 9, fontWeight: 900, lineHeight: 1 }}>&gt;</span>
-        <span style={{ color, fontSize: 9, fontWeight: 900, lineHeight: 1 }}>&lt;</span>
+        <span>&gt;</span>
+        <span>&lt;</span>
       </div>
 
       {/* Fade oben + unten */}
-      <div aria-hidden className="absolute top-0 left-0 right-0 z-10 pointer-events-none"
-           style={{ height: ITEM_H, background: "linear-gradient(to bottom, #0A0A0A 0%, rgba(10,10,10,0) 100%)" }} />
-      <div aria-hidden className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none"
-           style={{ height: ITEM_H, background: "linear-gradient(to top, #0A0A0A 0%, rgba(10,10,10,0) 100%)" }} />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 70%, rgba(0,0,0,0.6) 100%)",
+          zIndex: 2,
+        }}
+      />
 
       {/* Scroll-Container */}
       <div
@@ -155,20 +156,13 @@ export default function GearPicker({ value = 10, onChange, color = "#CCFF00", te
         onScroll={onScroll}
         onWheel={onWheel}
         onMouseDown={onMouseDown}
-        onKeyDown={onKeyDown}
-        tabIndex={0}
-        role="slider"
-        aria-label="Wöchentliche Steigerung in Prozent"
-        aria-valuemin={1}
-        aria-valuemax={10}
-        aria-valuenow={clamp(value)}
-        data-testid={`${testid}-scroller`}
-        className={`absolute inset-0 overflow-y-scroll outline-none cursor-ns-resize gp-hide-${testid}`}
         style={{
+          height: HEIGHT,
+          overflowY: "auto",
           scrollSnapType: "y mandatory",
           scrollbarWidth: "none",
           msOverflowStyle: "none",
-          WebkitOverflowScrolling: "touch",
+          cursor: "ns-resize",
         }}
       >
         <div style={{ height: ITEM_H }} />
@@ -180,18 +174,14 @@ export default function GearPicker({ value = 10, onChange, color = "#CCFF00", te
               data-testid={`${testid}-item-${n}`}
               style={{
                 height: ITEM_H,
+                lineHeight: `${ITEM_H}px`,
+                textAlign: "center",
+                fontSize: 12,
+                fontWeight: active ? 700 : 400,
+                color: active ? color : "rgba(255,255,255,0.55)",
                 scrollSnapAlign: "center",
-                scrollSnapStop: "always",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: "Anton, Impact, sans-serif",
-                fontSize: active ? 13 : 11,
-                fontWeight: 700,
-                color: active ? color : "#555",
-                textShadow: active ? `0 0 6px ${color}88` : "none",
-                transition: "color 120ms, font-size 120ms",
-                userSelect: "none",
+                transition: "color 120ms ease",
+                animation: hover ? "gp-spin 6s linear infinite" : "none",
               }}
             >
               {n}
