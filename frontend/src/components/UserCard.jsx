@@ -160,10 +160,19 @@ export default function UserCard({ entry, isMe, flash, canBoost, onBoost, onCanc
       {all_time && (
         <div className="border-t border-[#1A1A1A] pt-3" data-testid={`all-time-${entry.user_id}`}>
           <p className="text-[9px] uppercase tracking-[0.25em] text-[#555] mb-2">All-Time Total</p>
-          <div className="grid grid-cols-3 gap-2">
+          {/* Dynamisches Grid: 3, 4 oder 5 Spalten – alles in einer Zeile.
+              Bei 4-5 Zielen werden die Werte etwas enger geschrieben (gap reduziert, Schrift skaliert), Standard-Layout bleibt bei 3 Zielen unverändert. */}
+          <div
+            className={`grid items-start ${exercises.length >= 5 ? "gap-1.5" : exercises.length === 4 ? "gap-2" : "gap-2"}`}
+            style={{ gridTemplateColumns: `repeat(${exercises.length}, minmax(0, 1fr))` }}
+          >
             {exercises.map((ex) => (
-              <div key={ex.key} className="text-center">
-                <p className="font-anton text-lg leading-none" style={{ color: ex.color }}>
+              <div key={ex.key} className="text-center min-w-0">
+                <p
+                  className={`font-anton leading-none ${exercises.length >= 5 ? "text-sm md:text-base" : exercises.length === 4 ? "text-base md:text-lg" : "text-lg"} truncate`}
+                  style={{ color: ex.color }}
+                  title={`${Math.round((all_time[ex.key] || 0) * 100) / 100}${ex.unit ? " " + ex.unit : ""}`}
+                >
                   {Math.round((all_time[ex.key] || 0) * 100) / 100}
                 </p>
                 <p className="text-[9px] uppercase tracking-widest text-[#444] mt-0.5 truncate">{ex.unit || "reps"}</p>

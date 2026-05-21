@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lightning, SignOut, Gear, UserCircle, Plus, Minus, Pulse, Flame, Trophy, ChartBar } from "@phosphor-icons/react";
+import { Lightning, SignOut, Gear, Plus, Minus, Pulse, Flame, Trophy, ChartBar } from "@phosphor-icons/react";
 import { useAuth } from "../contexts/AuthContext";
 import { api, wsUrl } from "../lib/api";
 import UserCard from "../components/UserCard";
@@ -271,14 +271,6 @@ export default function Dashboard() {
               <span className="hidden md:inline">Settings</span>
             </button>
             <button
-              onClick={() => navigate("/profile")}
-              data-testid="profile-button"
-              className="border border-[#222] hover:border-[#CCFF00] hover:text-[#CCFF00] px-3 md:px-4 py-2 text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
-            >
-              <UserCircle size={16} weight="duotone" />
-              <span className="hidden md:inline">Profile</span>
-            </button>
-            <button
               onClick={logout}
               data-testid="logout-button"
               className="border border-[#222] hover:border-[#FF3B30] hover:text-[#FF3B30] px-3 md:px-4 py-2 text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
@@ -291,8 +283,8 @@ export default function Dashboard() {
       </header>
 
       <section className="border-b border-[#1A1A1A] tactical-grid">
-        <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
-          <div className="md:col-span-2">
+        <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+          <div className="md:flex-1 md:min-w-0">
             <p className="text-xs uppercase tracking-[0.3em] text-[#CCFF00] mb-3">/ THE CREW DASHBOARD</p>
             <h1 className="font-anton text-5xl md:text-6xl leading-none tracking-tight mb-3">
               WEEK <span className="text-[#CCFF00] text-glow-lime">{String(me?.week_number || 1).padStart(2, "0")}</span> · GET TO WORK
@@ -306,9 +298,18 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            {me?.exercises.slice(0, 3).map((ex) => (
-              <div key={ex.key} className="border border-[#222] bg-[#121212] p-3 md:p-4 relative">
+          {/* Mobile: grid-cols-3 -> erste 3 in voller Größe in Reihe 1, weitere wrappen darunter.
+              PC (md+): flex-row, alle Ziele in einer einzigen Reihe rechts neben dem Text. */}
+          <div
+            className="grid grid-cols-3 gap-3 md:flex md:flex-row md:flex-nowrap md:gap-3 md:shrink-0"
+            data-testid="hero-goals-strip"
+          >
+            {me?.exercises.map((ex) => (
+              <div
+                key={ex.key}
+                className="border border-[#222] bg-[#121212] p-3 md:p-4 relative md:w-[120px]"
+                data-testid={`hero-goal-${ex.key}`}
+              >
                 <p className="text-[9px] md:text-[10px] uppercase tracking-wider md:tracking-widest text-[#8A8A8A] mb-1 flex items-center gap-1 truncate pr-3 md:pr-0">
                   <ExerciseIcon icon={ex.icon} size={12} /> {ex.name}
                 </p>

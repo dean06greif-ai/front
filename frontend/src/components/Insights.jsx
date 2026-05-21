@@ -79,7 +79,16 @@ export default function Insights({ open, onClose }) {
 }
 
 function ExerciseInsight({ ex }) {
-  const maxVal = Math.max(...ex.by_weekday, 1);
+  // Defensive: Sicherstellen dass by_weekday existiert und ein Array ist
+  const byWeekday = Array.isArray(ex.by_weekday) ? ex.by_weekday : [0, 0, 0, 0, 0, 0, 0];
+  const maxVal = Math.max(...byWeekday, 1);
+  
+  // Defensive: Sicherstellen dass share_per_day existiert
+  const sharePerDay = Array.isArray(ex.share_per_day) ? ex.share_per_day : [0, 0, 0, 0, 0, 0, 0];
+  
+  // Defensive: Sicherstellen dass consistency existiert
+  const consistency = Array.isArray(ex.consistency) ? ex.consistency : [0, 0, 0, 0, 0, 0, 0];
+
   return (
     <div className="border border-[#1A1A1A] bg-[#121212] p-5 space-y-5" data-testid={`insight-${ex.key}`}>
       <div className="flex items-center justify-between">
@@ -95,22 +104,22 @@ function ExerciseInsight({ ex }) {
       </div>
 
       {/* Power Day callout */}
-      {ex.power_day !== null && (
+      {ex.power_day !== null && ex.power_day !== undefined && (
         <div className="flex items-stretch gap-2 text-[11px]">
           <div className="flex-1 border border-[#CCFF00]/40 bg-[#CCFF00]/[0.05] px-3 py-2" data-testid={`power-day-${ex.key}`}>
             <div className="flex items-center gap-1.5 text-[#CCFF00] uppercase tracking-widest text-[9px] mb-1">
               <Trophy size={11} weight="fill" /> Power-Day
             </div>
-            <p className="font-anton text-base text-white leading-none">{DAY_LABELS_FULL[ex.power_day]}</p>
-            <p className="text-[10px] text-[#888] mt-1">{ex.share_per_day[ex.power_day]}% deiner Gesamtleistung</p>
+            <p className="font-anton text-base text-white leading-none">{DAY_LABELS_FULL[ex.power_day] || "—"}</p>
+            <p className="text-[10px] text-[#888] mt-1">{sharePerDay[ex.power_day] || 0}% deiner Gesamtleistung</p>
           </div>
-          {ex.weakest_day !== null && ex.weakest_day !== ex.power_day && (
+          {ex.weakest_day !== null && ex.weakest_day !== undefined && ex.weakest_day !== ex.power_day && (
             <div className="flex-1 border border-[#444] px-3 py-2" data-testid={`weak-day-${ex.key}`}>
               <div className="flex items-center gap-1.5 text-[#888] uppercase tracking-widest text-[9px] mb-1">
                 Schwacher Tag
               </div>
-              <p className="font-anton text-base text-white leading-none">{DAY_LABELS_FULL[ex.weakest_day]}</p>
-              <p className="text-[10px] text-[#666] mt-1">{ex.share_per_day[ex.weakest_day]}% Anteil</p>
+              <p className="font-anton text-base text-white leading-none">{DAY_LABELS_FULL[ex.weakest_day] || "—"}</p>
+              <p className="text-[10px] text-[#666] mt-1">{sharePerDay[ex.weakest_day] || 0}% Anteil</p>
             </div>
           )}
         </div>
@@ -119,25 +128,34 @@ function ExerciseInsight({ ex }) {
       {/* Bar chart Mo-So */}
       <div>
         <p className="text-[9px] uppercase tracking-[0.25em] text-[#555] mb-3">Verteilung (Total)</p>
-        <div className="flex items-end justify-between gap-1.5 h-24">
+        <div className="flex items-end justify-between gap-1.5 h-28" data-testid={`distribution-${ex.key}`}>
           {DAY_LABELS.map((day, i) => {
-            const v = ex.by_weekday[i];
-            const pct = Math.max(2, (v / maxVal) * 100);
+            const v = byWeekday[i] || 0;
+            const hasData = v > 0;
+            const pct = hasData
+              ? Math.max(8, maxVal > 0 ? (v / maxVal) * 100 : 0)
+              : 3;
             const isPower = i === ex.power_day;
+            const unitLower = (ex.unit || "").toLowerCase();
+            const isDistance = unitLower.includes("km") || unitLower === "m" || unitLower.includes("mi");
+            const label = hasData ? (isDistance ? Number(v).toFixed(1) : Math.round(v)) : "—";
             return (
               <div key={day} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                <span className={`text-[9px] font-anton leading-none tabular-nums ${hasData ? (isPower ? "text-white" : "text-[#AAA]") : "text-[#333]"}`}>
+                  {label}
+                </span>
                 <div className="w-full flex-1 flex items-end">
                   <div
                     className="w-full transition-all"
                     style={{
                       height: `${pct}%`,
-                      background: isPower ? ex.color : `${ex.color}55`,
-                      boxShadow: isPower ? `0 0 12px ${ex.color}` : "none",
+                      background: hasData ? (isPower ? ex.color : `${ex.color}AA`) : "#222",
+                      boxShadow: isPower && hasData ? `0 0 12px ${ex.color}` : "none",
                     }}
                     title={`${day}: ${v}${ex.unit ? ` ${ex.unit}` : ""}`}
                   />
                 </div>
-                <span className={`text-[9px] uppercase tracking-widest ${isPower ? "text-white" : "text-[#555]"}`}>
+                <span className={`text-[9px] uppercase tracking-widest ${isPower && hasData ? "text-white" : "text-[#555]"}`}>
                   {day}
                 </span>
               </div>
@@ -150,7 +168,7 @@ function ExerciseInsight({ ex }) {
       <div>
         <p className="text-[9px] uppercase tracking-[0.25em] text-[#555] mb-2">Trainings-Konsistenz</p>
         <div className="grid grid-cols-7 gap-1.5">
-          {ex.consistency.map((c, i) => (
+          {consistency.map((c, i) => (
             <div key={i} className="text-center">
               <div
                 className="h-1.5 mb-1"

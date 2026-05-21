@@ -77,15 +77,22 @@ const SquatSvg = ({ size = 24 }) => (
   </Stroke>
 );
 
-const SprintSvg = ({ size = 24 }) => (
-  <span className="inline-flex items-center" style={{ gap: 2 }}>
-    <svg viewBox="0 0 12 32" width={size * 0.42} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <line x1="2" y1="10" x2="10" y2="10" opacity="0.55" />
-      <line x1="0" y1="16" x2="10" y2="16" />
-      <line x1="2" y1="22" x2="10" y2="22" opacity="0.55" />
-    </svg>
-    <PersonSimpleRun size={size} weight="bold" />
-  </span>
+const HandstandSvg = ({ size = 24 }) => (
+  <Stroke size={size}>
+    {/* Hand ticks (kleine Markierungen — keine Bodenlinie) */}
+    <line x1="9" y1="27" x2="9" y2="29" />
+    <line x1="23" y1="27" x2="23" y2="29" />
+    {/* Straight arms from hands up to shoulders */}
+    <line x1="9" y1="29" x2="14" y2="19" />
+    <line x1="23" y1="29" x2="18" y2="19" />
+    {/* Head — face pointing DOWN (between shoulders) */}
+    <circle cx="16" cy="22" r="2.2" />
+    {/* Body going straight UP from shoulders to hips */}
+    <line x1="16" y1="19" x2="16" y2="9" />
+    {/* Legs straight up, slightly spread */}
+    <line x1="16" y1="9" x2="12" y2="3" />
+    <line x1="16" y1="9" x2="20" y2="3" />
+  </Stroke>
 );
 
 const BikeSvg = ({ size = 24 }) => (
@@ -102,7 +109,7 @@ const RunSvg = ({ size = 24 }) => (
 
 const REGISTRY = {
   run: RunSvg,
-  sprint: SprintSvg,
+  handstand: HandstandSvg,
   pushup: PushupSvg,
   pullup: PullupSvg,
   dip: DipSvg,
@@ -111,9 +118,16 @@ const REGISTRY = {
   swim: SwimSvg,
 };
 
+// Backwards-compat: alte Daten mit icon "sprint" oder "hspu" werden auf "handstand" gemappt
+const ALIASES = {
+  sprint: "handstand",
+  hspu: "handstand",
+};
+
 export const ICON_KEYS = Object.keys(REGISTRY);
 
 export default function ExerciseIcon({ icon = "pushup", size = 20, className = "" }) {
-  const Cmp = REGISTRY[icon] || REGISTRY.pushup;
+  const resolved = ALIASES[icon] || icon;
+  const Cmp = REGISTRY[resolved] || REGISTRY.pushup;
   return <span className={className}><Cmp size={size} /></span>;
 }
